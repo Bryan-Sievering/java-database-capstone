@@ -34,7 +34,7 @@ public class Patient {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phone;
 
-    @NotNull(message = "Address is requred")
+    @NotNull(message = "Address is required")
     @Size(max = 255, message = "Cannot exceed 255 characters")
     private String address;
 
