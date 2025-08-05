@@ -1,4 +1,8 @@
-Admin User Story 1
+# User Stories
+
+## Admin User Stories
+
+### Admin User Story 1
 Title:
 As an admin, I want to log into the portal with my username and password, so that I can manage the platform securely.
 
@@ -20,7 +24,7 @@ Should use encrypted passwords
 Login failures should be logged
 
 
-Admin User Story 2
+### Admin User Story 2
 Title:
 As an admin, I want to log out of the portal, so that I can protect system access.
 
@@ -42,7 +46,7 @@ Session tokens should be invalidated
 Consider implementing session timeout
 
 
-Admin User Story 3
+### Admin User Story 3
 Title:
 As an admin, I want to add doctors to the portal, so that they can manage appointments and patients.
 
@@ -64,7 +68,7 @@ Doctor ID should be unique
 Validate email and specialty fields
 
 
-Admin User Story 4
+### Admin User Story 4
 Title:
 As an admin, I want to delete a doctor's profile from the portal, so that I can remove inactive or incorrect entries.
 
@@ -86,7 +90,7 @@ Handle cascade deletes carefully
 Consider soft delete (e.g., inactive flag)
 
 
-Admin User Story 5
+### Admin User Story 5
 Title:
 As an admin, I want to run a stored procedure in MySQL CLI to get the number of appointments per month, so that I can track platform usage.
 
@@ -107,8 +111,9 @@ Procedure name: get_monthly_appointments()
 
 Optional: integrate result view into admin dashboard
 
+## Patient User Stories
 
-Patient User Story 1
+### Patient User Story 1
 Title:
 As a patient, I want to view a list of doctors without logging in, so that I can explore my options before registering.
 
@@ -128,7 +133,7 @@ Notes:
 Consider basic filters like specialty or location
 
 
-Patient User Story 2
+### Patient User Story 2
 Title:
 As a patient, I want to sign up using my email and password, so that I can book appointments.
 
@@ -150,7 +155,7 @@ Implement email uniqueness check
 Store password securely (hashing)
 
 
-Patient User Story 3
+### Patient User Story 3
 Title:
 As a patient, I want to log into the portal, so that I can manage my bookings.
 
@@ -172,7 +177,7 @@ Add "Remember me" option
 Use session management
 
 
-Patient User Story 4
+### Patient User Story 4
 Title:
 As a patient, I want to log out of the portal, so that I can secure my account.
 
@@ -192,7 +197,7 @@ Notes:
 Consider auto-logout after inactivity
 
 
-Patient User Story 5
+### Patient User Story 5
 Title:
 As a patient, I want to book an hour-long appointment with a doctor, so that I can get a consultation.
 
@@ -214,7 +219,7 @@ Prevent overlapping appointments
 Send email confirmation (optional)
 
 
-Patient User Story 6
+### Patient User Story 6
 Title:
 As a patient, I want to view my upcoming appointments, so that I can prepare accordingly.
 
@@ -234,7 +239,9 @@ Notes:
 Allow sorting or filtering by date
 
 
-Doctor User Story 1
+## Doctor User Stories
+
+### Doctor User Story 1
 Title:
 As a doctor, I want to log into the portal, so that I can manage my appointments.
 
@@ -254,7 +261,7 @@ Notes:
 Login must be secure using HTTPS
 
 
-Doctor User Story 2
+### Doctor User Story 2
 Title:
 As a doctor, I want to log out of the portal, so that I can protect my data.
 
@@ -274,7 +281,7 @@ Notes:
 Consider automatic session timeout after inactivity
 
 
-Doctor User Story 3
+### Doctor User Story 3
 Title:
 As a doctor, I want to view my appointment calendar, so that I can stay organized.
 
@@ -294,7 +301,7 @@ Notes:
 Consider calendar color coding or time blocking
 
 
-Doctor User Story 4
+### Doctor User Story 4
 Title:
 As a doctor, I want to mark my unavailability, so that patients only see available slots.
 
@@ -314,7 +321,7 @@ Notes:
 Validate that changes don’t overlap with existing appointments
 
 
-Doctor User Story 5
+### Doctor User Story 5
 Title:
 As a doctor, I want to update my profile with specialization and contact info, so that patients have up-to-date information.
 
@@ -334,7 +341,7 @@ Notes:
 Consider preview before submitting changes
 
 
-Doctor User Story 6
+### Doctor User Story 6
 Title:
 As a doctor, I want to view patient details for upcoming appointments, so that I can be prepared.
 
