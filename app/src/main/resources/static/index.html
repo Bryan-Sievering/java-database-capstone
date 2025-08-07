@@ -1,4 +1,44 @@
 <!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>My CMS</title>
+        <link rel="icon" href="../assets/images/logo/Logo.png">
+
+        <link rel="stylesheet" href="../assets/css/index.css">
+        <link rel="stylesheet" href="../assets/css/style.css">
+
+        <script src="../js/util.js" defer></script>
+        <script src="../js/render.js" defer></script>
+        <script src="../js/components/header.js" defer></script>
+        <script src="../js/components/footer.js" defer></script>
+    </head>
+
+    <body>
+        <div class = "container">
+             <div class = "wrapper">
+                 <div id="header"></div>
+                 <main class = "main-content">
+                     <h2>Select Your Role</h2>
+                     <button id = "adminButton" onclick="selectRole('Admin')">Admin</button>
+                     <button id = "doctorButton" onclick="selectRole('Doctor')">Doctor</button>
+                     <button id = "patientButton" onclick="selectRole('Patient')">Patient</button>
+                 </main>
+                 <div id="modal" class="modal" style="display:none;">
+                     <div class="modal-content">
+                         <button id="closeModal">Close</button>
+                         <div id="modal-body">
+                             <!-- Dynamic content will go here -->
+                         </div>
+                     </div>
+                 </div>
+                 <div id="footer"></div>
+             </div>
+        </div>
+        <script type="module" src="../js/services/index.js" defer></script>
+    </body>
+</html>
 <!-- 
 
 Step-by-Step Explanation of `index.html`.
