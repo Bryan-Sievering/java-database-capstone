@@ -117,7 +117,7 @@ export function createDoctorCard(doctor) {
 /*
 Import the overlay function for booking appointments from loggedPatient.js
 
-  Import the deleteDoctor API function to remove doctors (admin role) from docotrServices.js
+  Import the deleteDoctor API function to remove doctors (admin role) from doctorServices.js
 
   Import function to fetch patient details (used during booking) from patientServices.js
 
