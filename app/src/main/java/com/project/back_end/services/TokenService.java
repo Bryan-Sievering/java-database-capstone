@@ -1,6 +1,111 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Admin;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.util.Date;
+
+@Component
 public class TokenService {
+
+    private final AdminRepository adminRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+
+    private SecretKey signingKey;
+
+    @Value("${jwt.secret}") // from application.properties
+    private String secret;
+
+    private final long EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    public TokenService(AdminRepository adminRepository,
+                        DoctorRepository doctorRepository,
+                        PatientRepository patientRepository) {
+        this.adminRepository = adminRepository;
+        this.doctorRepository = doctorRepository;
+        this.patientRepository = patientRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        // Convert secret string into SecretKey
+        signingKey = Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    // Generate JWT token for identifier (username/email)
+    public String generateToken(String identifier) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + EXPIRATION_MS);
+
+        return Jwts.builder()
+                .setSubject(identifier)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // Extract identifier (subject) from JWT
+    public String extractIdentifier(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getSubject();
+    }
+
+
+    // Validate token for a specific user type
+    public boolean validateToken(String token, String userType) {
+        try {
+            String identifier = extractIdentifier(token);
+
+            switch (userType.toLowerCase()) {
+                case "admin":
+                    Admin admin = adminRepository.findByUsername(identifier);
+                    return admin != null;
+                case "doctor":
+                    Doctor doctor = doctorRepository.findByEmail(identifier);
+                    return doctor != null;
+                case "patient":
+                    try {
+                        Long patientId = Long.parseLong(identifier);
+                        Patient patient = patientRepository.findById(patientId)
+                                .orElseThrow(() -> new RuntimeException("Patient not found"));
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+
+                default:
+                    return false;
+            }
+        } catch (Exception e) {
+            return false; // invalid or expired token
+        }
+    }
+
+    // Optional: Get the SecretKey (for testing or custom parsing)
+    public SecretKey getSigningKey() {
+        return signingKey;
+    }
+}
+
+
 // 1. **@Component Annotation**
 // The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
 // This allows the class to be injected into other Spring-managed components (like services or controllers) where it's needed.
@@ -39,5 +144,3 @@ public class TokenService {
 // - The method gracefully handles any errors by returning false if the token is invalid or an exception occurs.
 // This ensures secure access control based on the user's role and their existence in the system.
 
-
-}

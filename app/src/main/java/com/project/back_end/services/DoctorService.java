@@ -1,6 +1,182 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.services.TokenService;
+import jakarta.transaction.Transactional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
 public class DoctorService {
+
+    private final DoctorRepository doctorRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
+
+    public DoctorService(DoctorRepository doctorRepository,
+                         AppointmentRepository appointmentRepository,
+                         TokenService tokenService) {
+        this.doctorRepository = doctorRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.tokenService = tokenService;
+    }
+
+    /**
+     * Save a doctor, prevent duplicates by email
+     * @return -1 if duplicate, 1 if success, 0 if error
+     */
+    @Transactional
+    public int saveDoctor(Doctor doctor) {
+        if (doctorRepository.findByEmail(doctor.getEmail()) != null) {
+            return -1; // Duplicate email
+        }
+        try {
+            doctorRepository.save(doctor);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Update an existing doctor
+     * @return -1 if not found, 1 if success, 0 if error
+     */
+    @Transactional
+    public int updateDoctor(Doctor doctor) {
+        if (!doctorRepository.existsById(doctor.getId())) {
+            return -1;
+        }
+        try {
+            doctorRepository.save(doctor);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Delete a doctor and all related appointments
+     * @return -1 if not found, 1 if success, 0 if error
+     */
+    @Transactional
+    public int deleteDoctor(Long id) {
+        Optional<Doctor> doctor = doctorRepository.findById(id);
+        if (doctor.isEmpty()) {
+            return -1;
+        }
+        try {
+            appointmentRepository.deleteAll(
+                    appointmentRepository.findByDoctorId(id)
+            );
+            doctorRepository.deleteById(id);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Validate doctor credentials and return a token
+     */
+    public String validateDoctor(String email, String password) {
+        Doctor doctor = doctorRepository.findByEmail(email);
+        if (doctor != null && doctor.getPassword().equals(password)) {
+            return tokenService.generateToken(email);
+        }
+        return null; // invalid credentials
+    }
+
+    /**
+     * Get doctor availability for a specific date
+     */
+    public List<LocalTime> getDoctorAvailability(Long doctorId, LocalDate date) {
+        List<Appointment> appointments = appointmentRepository
+                .findByDoctorIdAndAppointmentTimeBetween(
+                        doctorId,
+                        date.atStartOfDay(),
+                        date.atTime(23, 59)
+                );
+
+        List<LocalTime> bookedTimes = appointments.stream()
+                .map(a -> a.getAppointmentTime().toLocalTime())
+                .toList();
+
+        List<LocalTime> allSlots = generateTimeSlots();
+        return allSlots.stream()
+                .filter(slot -> !bookedTimes.contains(slot))
+                .collect(Collectors.toList());
+    }
+
+    private List<LocalTime> generateTimeSlots() {
+        List<LocalTime> slots = new ArrayList<>();
+        for (int hour = 9; hour <= 17; hour++) {
+            slots.add(LocalTime.of(hour, 0));
+            slots.add(LocalTime.of(hour, 30));
+        }
+        return slots;
+    }
+
+    /**
+     * Filter doctors by name, specialty, and time availability
+     */
+    public List<Doctor> filterDoctorsByNameSpecialtyAndTime(String name, String specialty, String timePeriod) {
+        // Fetch doctors matching name and specialty
+        List<Doctor> doctors = doctorRepository.findByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(
+                name != null ? name : "",
+                specialty != null ? specialty : ""
+        );
+
+        // Filter by time period if provided
+        if (timePeriod != null && !timePeriod.isEmpty()) {
+            doctors = filterDoctorByTime(doctors, timePeriod);
+        }
+
+        return doctors;
+    }
+
+    /**
+     * Filter doctors by name and time availability
+     */
+    public List<Doctor> filterDoctorByNameAndTime(String name, String timePeriod) {
+        List<Doctor> doctors = doctorRepository.findByNameLike("%" + name + "%");
+        return filterDoctorByTime(doctors, timePeriod);
+    }
+
+    /**
+     * Filter doctors by AM/PM availability
+     */
+    private List<Doctor> filterDoctorByTime(List<Doctor> doctors, String timePeriod) {
+        return doctors.stream()
+                .filter(doctor -> doctor.getAvailableTimes() != null && doctor.getAvailableTimes().stream()
+                        .map(LocalTime::parse) // convert string to LocalTime
+                        .anyMatch(t -> timePeriod.equalsIgnoreCase("AM") ? t.isBefore(LocalTime.NOON) : t.isAfter(LocalTime.NOON))
+                )
+                .collect(Collectors.toList());
+    }
+
+    // Existing simpler queries
+    public Doctor getDoctorByEmail(String email) {
+        return doctorRepository.findByEmail(email);
+    }
+
+    public List<Doctor> getBySpecialty(String specialty) {
+        return doctorRepository.findBySpecialtyIgnoreCase(specialty);
+    }
+
+    public List<Doctor> getAllDoctors() {
+        return doctorRepository.findAll();
+    }
+}
+
 
 // 1. **Add @Service Annotation**:
 //    - This class should be annotated with `@Service` to indicate that it is a service layer class.
@@ -87,6 +263,3 @@ public class DoctorService {
 //    - Filters all doctors based on their availability during a specific time period (AM/PM).
 //    - The method checks all doctors' available times and returns those available during the specified time period.
 //    - Instruction: Ensure proper filtering logic to handle AM/PM time periods.
-
-   
-}

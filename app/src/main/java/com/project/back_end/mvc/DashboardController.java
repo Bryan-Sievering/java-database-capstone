@@ -1,6 +1,45 @@
 package com.project.back_end.mvc;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import java.util.Map;
+
+@Controller
 public class DashboardController {
+    @Autowired
+    private TokenValidationService tokenValidationService;
+
+    // 3. Admin dashboard route
+    @GetMapping("/adminDashboard/{token}")
+    public String adminDashboard(@PathVariable String token) {
+        Map<String, Object> validationResult = tokenValidationService.validateToken(token, "admin");
+
+        if (validationResult.isEmpty()) {
+            // Token is valid → show admin dashboard
+            return "admin/adminDashboard";
+        } else {
+            // Invalid token → redirect to login/root
+            return "redirect:http://localhost:8080";
+        }
+    }
+
+    // 4. Doctor dashboard route
+    @GetMapping("/doctorDashboard/{token}")
+    public String doctorDashboard(@PathVariable String token) {
+        Map<String, Object> validationResult = tokenValidationService.validateToken(token, "doctor");
+
+        if (validationResult.isEmpty()) {
+            // Token is valid → show doctor dashboard
+            return "doctor/doctorDashboard";
+        } else {
+            // Invalid token → redirect to login/root
+            return "redirect:http://localhost:8080";
+        }
+    }
+}
 
 // 1. Set Up the MVC Controller Class:
 //    - Annotate the class with `@Controller` to indicate that it serves as an MVC controller returning view names (not JSON).
@@ -27,4 +66,4 @@ public class DashboardController {
 //    - If the token is invalid, redirects to the root URL.
 
 
-}
+
