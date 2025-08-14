@@ -29,6 +29,10 @@ public class Appointment {
     @NotNull(message = "Appointment status is required")
     private int status;
 
+    @NotNull
+    private boolean prescriptionAdded = false;
+
+
     @Transient
     public LocalDateTime getEndTime(){
         return this.appointmentTime.plusHours(1);
@@ -95,6 +99,14 @@ public class Appointment {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public boolean isPrescriptionAdded() {
+        return prescriptionAdded;
+    }
+
+    public void setPrescriptionAdded(boolean prescriptionAdded) {
+        this.prescriptionAdded = prescriptionAdded;
     }
 }
 

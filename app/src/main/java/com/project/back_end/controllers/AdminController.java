@@ -1,7 +1,28 @@
-
 package com.project.back_end.controllers;
 
+import com.project.back_end.services.AppService;
+import com.project.back_end.models.Admin;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("${api.path}admin")
 public class AdminController {
+
+    private final AppService appService;
+
+    public AdminController(AppService appService) {
+        this.appService = appService;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> adminLogin(@RequestBody Admin admin) {
+        return appService.validateAdmin(admin);
+    }
+}
+
 
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to indicate that it's a REST controller, used to handle web requests and return JSON responses.
@@ -20,8 +41,4 @@ public class AdminController {
 //    - Accepts an `Admin` object in the request body, which contains login credentials.
 //    - Delegates authentication logic to the `validateAdmin` method in the service layer.
 //    - Returns a `ResponseEntity` with a `Map` containing login status or messages.
-
-
-
-}
 

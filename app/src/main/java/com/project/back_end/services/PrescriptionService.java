@@ -15,58 +15,61 @@ public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
 
-    // Constructor injection for dependency
     public PrescriptionService(PrescriptionRepository prescriptionRepository) {
         this.prescriptionRepository = prescriptionRepository;
     }
 
-    /**
-     * Saves a new prescription if one does not already exist for the appointment.
-     *
-     * @param prescription the prescription object to save
-     * @return ResponseEntity with message and HTTP status
-     */
+    // Save a new prescription
     public ResponseEntity<Map<String, String>> savePrescription(Prescription prescription) {
         Map<String, String> response = new HashMap<>();
         try {
+            // Check if prescription already exists for this appointment
             List<Prescription> existing = prescriptionRepository.findByAppointmentId(prescription.getAppointmentId());
             if (!existing.isEmpty()) {
                 response.put("message", "Prescription already exists for this appointment");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body(response);
             }
+
             prescriptionRepository.save(prescription);
             response.put("message", "Prescription saved");
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (Exception e) {
             e.printStackTrace();
             response.put("message", "An error occurred while saving the prescription");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    /**
-     * Retrieves the prescription(s) associated with a specific appointment.
-     *
-     * @param appointmentId the ID of the appointment
-     * @return ResponseEntity with prescription data or error message
-     */
+    // Get prescription(s) by appointment ID
     public ResponseEntity<Map<String, Object>> getPrescription(Long appointmentId) {
         Map<String, Object> response = new HashMap<>();
         try {
             List<Prescription> prescriptions = prescriptionRepository.findByAppointmentId(appointmentId);
             if (prescriptions.isEmpty()) {
                 response.put("message", "No prescription found for this appointment");
-                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
+
             response.put("prescriptions", prescriptions);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             e.printStackTrace();
             response.put("message", "An error occurred while fetching the prescription");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    public List<Prescription> getPrescriptionByAppointmentId(Long appointmentId) {
+        List<Prescription> prescriptions = prescriptionRepository.findByAppointmentId(appointmentId);
+        if (prescriptions.isEmpty()) {
+            throw new RuntimeException("No prescription found for this appointment");
+        }
+        return prescriptions;
+    }
 }
+
 
 
 // 1. **Add @Service Annotation**:

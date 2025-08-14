@@ -103,6 +103,33 @@ public class TokenService {
     public SecretKey getSigningKey() {
         return signingKey;
     }
+
+    // Extract Doctor ID from token
+    public Long extractDoctorId(String token) {
+        String email = extractIdentifier(token);
+        Doctor doctor = doctorRepository.findByEmail(email);
+        if (doctor == null) {
+            throw new RuntimeException("Doctor not found");
+        }
+        return doctor.getId();
+    }
+
+    // Extract Patient ID from token
+    public Long extractPatientId(String token) {
+        String identifier = extractIdentifier(token);
+
+        try {
+            // If you encode the patient ID as the identifier in token
+            Long patientId = Long.parseLong(identifier);
+            if (!patientRepository.findById(patientId).isPresent()) {
+                throw new RuntimeException("Patient not found");
+            }
+            return patientId;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid patient identifier in token");
+        }
+    }
+
 }
 
 
