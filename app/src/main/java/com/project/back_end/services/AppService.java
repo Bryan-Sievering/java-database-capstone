@@ -2,10 +2,10 @@ package com.project.back_end.services;
 
 import com.project.back_end.models.*;
 import com.project.back_end.repo.*;
+import com.project.back_end.DTO.Login;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import com.project.back_end.DTO.Login;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,11 +22,11 @@ public class AppService {
     private final PatientService patientService;
 
     public AppService(TokenService tokenService,
-                   AdminRepository adminRepository,
-                   DoctorRepository doctorRepository,
-                   PatientRepository patientRepository,
-                   DoctorService doctorService,
-                   PatientService patientService) {
+                      AdminRepository adminRepository,
+                      DoctorRepository doctorRepository,
+                      PatientRepository patientRepository,
+                      DoctorService doctorService,
+                      PatientService patientService) {
         this.tokenService = tokenService;
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
@@ -35,64 +35,60 @@ public class AppService {
         this.patientService = patientService;
     }
 
-    /** Validate JWT token for a user */
+    // ------------------ TOKEN VALIDATION ------------------
     public ResponseEntity<Map<String, String>> validateToken(String token, String user) {
         Map<String, String> response = new HashMap<>();
         try {
             boolean valid = tokenService.validateToken(token, user);
             if (!valid) {
                 response.put("message", "Invalid or expired token");
-                return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             response.put("message", "Token is valid");
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("message", "Token validation failed");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    /** Validate admin login credentials */
+    // ------------------ ADMIN LOGIN ------------------
     public ResponseEntity<Map<String, String>> validateAdmin(Admin receivedAdmin) {
         Map<String, String> response = new HashMap<>();
         try {
-            // Fetch admin by username
             Admin admin = adminRepository.findByUsername(receivedAdmin.getUsername());
 
             if (admin != null) {
-                // Check if password matches
                 if (admin.getPassword().equals(receivedAdmin.getPassword())) {
-                    // Generate token
                     String token = tokenService.generateToken(admin.getUsername());
                     response.put("token", token);
                     return ResponseEntity.ok(response);
                 } else {
                     response.put("error", "Incorrect password");
-                    return ResponseEntity.status(401).body(response);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
                 }
             } else {
                 response.put("error", "Admin not found");
-                return ResponseEntity.status(401).body(response);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
         } catch (Exception e) {
             response.put("error", "Internal server error");
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    /** Filter doctors by name, specialty, and available time */
+    // ------------------ DOCTOR FILTER ------------------
     public Map<String, Object> filterDoctor(String name, String specialty, String time) {
         Map<String, Object> response = new HashMap<>();
-        // Use 'time' (the method parameter) instead of 'timePeriod'
         List<Doctor> doctors = doctorService.filterDoctorsByNameSpecialtyAndTime(name, specialty, time);
         response.put("doctors", doctors);
         return response;
     }
 
-    /** Validate appointment time for a doctor */
+    // ------------------ APPOINTMENT VALIDATION ------------------
     public int validateAppointment(Appointment appointment) {
         Optional<Doctor> doctorOpt = doctorRepository.findById(appointment.getDoctor().getId());
-        if (!doctorOpt.isPresent()) return -1;
+        if (doctorOpt.isEmpty()) return -1;
 
         List<LocalDateTime> availableSlots = doctorService.getDoctorAvailability(
                         appointment.getDoctor().getId(),
@@ -101,17 +97,15 @@ public class AppService {
                 .map(time -> appointment.getAppointmentTime().toLocalDate().atTime(time))
                 .collect(Collectors.toList());
 
-        if (availableSlots.contains(appointment.getAppointmentTime())) return 1;
-
-        return 0;
+        return availableSlots.contains(appointment.getAppointmentTime()) ? 1 : 0;
     }
 
-    /** Check if patient already exists */
+    // ------------------ PATIENT VALIDATION ------------------
     public boolean validatePatient(Patient patient) {
         return patientRepository.findByEmailOrPhone(patient.getEmail(), patient.getPhone()).isEmpty();
     }
 
-    /** Validate patient login credentials */
+    // ------------------ PATIENT LOGIN ------------------
     public ResponseEntity<Map<String, String>> validatePatientLogin(Login login) {
         Map<String, String> response = new HashMap<>();
         try {
@@ -121,48 +115,56 @@ public class AppService {
                 if (patient.getPassword().equals(login.getPassword())) {
                     String token = tokenService.generateToken(patient.getEmail());
                     response.put("token", token);
-                    return new ResponseEntity<>(response, HttpStatus.OK);
+                    return ResponseEntity.ok(response);
                 } else {
                     response.put("message", "Incorrect password");
-                    return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
                 }
             } else {
                 response.put("message", "Patient not found");
-                return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
         } catch (Exception e) {
             response.put("message", "Patient login error");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    /** Filter patient appointments by condition and doctor */
+    // ------------------ HELPER: Get Patient from Token ------------------
+    private Patient getPatientFromToken(String token) {
+        Long patientId = tokenService.extractPatientId(token);
+        return patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Invalid token or patient not found"));
+    }
+
+
+    // ------------------ FILTER PATIENT APPOINTMENTS ------------------
     public ResponseEntity<Map<String, Object>> filterPatient(String condition, String name, String token) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String email = tokenService.getEmailFromToken(token);
-            Optional<Patient> patientOpt = patientRepository.findByEmail(email);
-            if (patientOpt.isEmpty()) {
-                response.put("message", "Invalid token or patient not found");
-                return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+            Patient patient = getPatientFromToken(token);
+
+            List<?> appointments;
+            if (condition != null && !condition.isEmpty() && name != null && !name.isEmpty()) {
+                appointments = patientService.filterByDoctorAndCondition(condition, name, patient.getId(), token);
+            } else if (condition != null && !condition.isEmpty()) {
+                appointments = patientService.filterByCondition(condition, patient.getId(), token);
+            } else if (name != null && !name.isEmpty()) {
+                appointments = patientService.filterByDoctor(name, patient.getId(), token);
+            } else {
+                appointments = patientService.getPatientAppointment(patient.getId(), token);
             }
 
-            Patient patient = patientOpt.get();
-            if (condition != null && !condition.isEmpty() && name != null && !name.isEmpty()) {
-                return patientService.filterByDoctorAndCondition(condition, name, patient.getId());
-            } else if (condition != null && !condition.isEmpty()) {
-                return patientService.filterByCondition(condition, patient.getId());
-            } else if (name != null && !name.isEmpty()) {
-                return patientService.filterByDoctor(name, patient.getId());
-            } else {
-                return patientService.getPatientAppointment(patient.getId(), token);
-            }
+            response.put("appointments", appointments);
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            response.put("message", "Error filtering patient appointments");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
+
 
 // 1. **@Service Annotation**
 // The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning

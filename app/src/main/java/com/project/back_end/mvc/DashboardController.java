@@ -1,5 +1,6 @@
 package com.project.back_end.mvc;
 
+import com.project.back_end.services.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,35 +11,31 @@ import java.util.Map;
 @Controller
 public class DashboardController {
     @Autowired
-    private TokenValidationService tokenValidationService;
+    private TokenService tokenService;
 
     // 3. Admin dashboard route
     @GetMapping("/adminDashboard/{token}")
     public String adminDashboard(@PathVariable String token) {
-        Map<String, Object> validationResult = tokenValidationService.validateToken(token, "admin");
+        boolean valid = tokenService.validateToken(token, "admin");
 
-        if (validationResult.isEmpty()) {
-            // Token is valid → show admin dashboard
+        if (valid) {
             return "admin/adminDashboard";
         } else {
-            // Invalid token → redirect to login/root
             return "redirect:http://localhost:8080";
         }
     }
 
-    // 4. Doctor dashboard route
     @GetMapping("/doctorDashboard/{token}")
     public String doctorDashboard(@PathVariable String token) {
-        Map<String, Object> validationResult = tokenValidationService.validateToken(token, "doctor");
+        boolean valid = tokenService.validateToken(token, "doctor");
 
-        if (validationResult.isEmpty()) {
-            // Token is valid → show doctor dashboard
+        if (valid) {
             return "doctor/doctorDashboard";
         } else {
-            // Invalid token → redirect to login/root
             return "redirect:http://localhost:8080";
         }
     }
+
 }
 
 // 1. Set Up the MVC Controller Class:

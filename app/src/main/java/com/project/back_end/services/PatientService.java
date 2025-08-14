@@ -147,5 +147,13 @@ public class PatientService {
         return null; // invalid credentials
     }
 
+    public List<AppointmentDTO> filterByDoctor(String doctorName, Long patientId, String token) {
+        // You can reuse existing filtering logic
+        List<AppointmentDTO> allAppointments = getPatientAppointment(patientId, token);
+        return allAppointments.stream()
+                .filter(appt -> appt.getDoctorName().toLowerCase().contains(doctorName.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
 
 }
