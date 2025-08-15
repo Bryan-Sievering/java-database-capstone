@@ -15,43 +15,31 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "doctor_id", nullable = false)
     @NotNull(message = "Doctor is required")
     private Doctor doctor;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "patient_id", nullable = false)
     @NotNull(message = "Patient is required")
     private Patient patient;
 
+    @NotNull(message = "Appointment time is required")
     @Future(message = "Appointment time must be in the future")
+    @Column(nullable = false)
     private LocalDateTime appointmentTime;
 
-    @NotNull(message = "Appointment status is required")
+    // Using primitive int -> @NotNull is ineffective; rely on DB constraint instead
+    @Column(nullable = false)
     private int status;
 
-    @NotNull
+    // Using primitive boolean -> @NotNull is ineffective; rely on DB constraint with default
+    @Column(nullable = false)
     private boolean prescriptionAdded = false;
 
-
-    @Transient
-    public LocalDateTime getEndTime(){
-        return this.appointmentTime.plusHours(1);
+    public Appointment() {
     }
-
-    public LocalDate getAppointmentDate(){
-        LocalDate appointmentDate = this.appointmentTime.toLocalDate();
-        return appointmentDate;
-    }
-
-    public LocalTime getAppointmentTimeOnly(){
-        LocalTime appointmentTimeOnly = this.appointmentTime.toLocalTime();
-        return  appointmentTimeOnly;
-    }
-
-    public Appointment(){
-
-    }
-
 
     public Appointment(Long id, Doctor doctor, Patient patient, LocalDateTime appointmentTime, int status) {
         this.id = id;
@@ -59,6 +47,21 @@ public class Appointment {
         this.patient = patient;
         this.appointmentTime = appointmentTime;
         this.status = status;
+    }
+
+    @Transient
+    public LocalDateTime getEndTime() {
+        return this.appointmentTime != null ? this.appointmentTime.plusHours(1) : null;
+    }
+
+    @Transient
+    public LocalDate getAppointmentDate() {
+        return this.appointmentTime != null ? this.appointmentTime.toLocalDate() : null;
+    }
+
+    @Transient
+    public LocalTime getAppointmentTimeOnly() {
+        return this.appointmentTime != null ? this.appointmentTime.toLocalTime() : null;
     }
 
     public Long getId() {
@@ -109,4 +112,3 @@ public class Appointment {
         this.prescriptionAdded = prescriptionAdded;
     }
 }
-

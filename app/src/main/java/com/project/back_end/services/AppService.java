@@ -163,6 +163,11 @@ public class AppService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    public boolean validateAdminLogin(Admin admin) {
+        // Example: check if username/password exist in DB
+        return adminRepository.findByUsernameAndPassword(admin.getUsername(), admin.getPassword()).isPresent();
+    }
 }
 
 

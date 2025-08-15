@@ -76,14 +76,15 @@ window.doctorLoginHandler = async function () {
 
 // Helper function to set the user role in localStorage and trigger page rendering
 export function selectRole(role) {
-  localStorage.setItem('userRole', role);
-  // Redirect or update UI based on role, example:
-  if (role === 'admin') {
-    window.location.href = '/pages/adminDashboard.html';
-  } else if (role === 'doctor') {
-    window.location.href = '/pages/doctorDashboard.html';
-  }
+    localStorage.setItem('userRole', role);
+
+    if (role === 'admin') {
+        window.location.href = '/admin'; // calls AdminController@GetMapping
+    } else if (role === 'doctor') {
+        window.location.href = '/doctor'; // calls DoctorController@GetMapping
+    }
 }
+
 
 
 

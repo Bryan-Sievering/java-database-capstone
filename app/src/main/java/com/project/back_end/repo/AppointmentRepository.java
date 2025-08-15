@@ -12,35 +12,46 @@ import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
+    // Simple find by doctorId
     List<Appointment> findByDoctorId(Long doctorId);
 
-    @Query("SELECT a FROM Appointment a LEFT JOIN FETCH a.doctor.availableTimes WHERE a.doctor.id = :doctorId AND a.appointmentTime BETWEEN :start AND :end")
+    // Find by doctorId and time range (no fetch of availableTimes to avoid Hibernate 6 issue)
+    @Query("SELECT a FROM Appointment a WHERE a.doctor.id = :doctorId AND a.appointmentTime BETWEEN :start AND :end")
     List<Appointment> findByDoctorIdAndAppointmentTimeBetween(@Param("doctorId") Long doctorId,
                                                               @Param("start") LocalDateTime start,
                                                               @Param("end") LocalDateTime end);
-    @Query("SELECT a FROM Appointment a " +
-            "LEFT JOIN FETCH a.doctor d " +
-            "LEFT JOIN FETCH a.patient p " +
+
+    // Find by doctor, patient name, and time range (fetch doctor and patient safely)
+    @Query("SELECT DISTINCT a FROM Appointment a " +
+            "JOIN FETCH a.doctor d " +
+            "JOIN FETCH a.patient p " +
             "WHERE d.id = :doctorId AND LOWER(p.name) LIKE LOWER(CONCAT('%', :patientName, '%')) " +
             "AND a.appointmentTime BETWEEN :start AND :end")
-    List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(@Param("doctorId") Long doctorId,
-                                                                                                 @Param("patientName") String patientName,
-                                                                                                 @Param("start") LocalDateTime start,
-                                                                                                 @Param("end") LocalDateTime end);
+    List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(
+            @Param("doctorId") Long doctorId,
+            @Param("patientName") String patientName,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 
+    // Delete all appointments by doctor
     @Modifying
     @Transactional
     void deleteAllByDoctorId(Long doctorId);
 
+    // Find by patient
     List<Appointment> findByPatientId(Long patientId);
 
+    // Find by patient and status
     List<Appointment> findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
 
+    // Filter by doctor name and patientId
     @Query("SELECT a FROM Appointment a " +
             "JOIN a.doctor d " +
             "WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :doctorName, '%')) AND a.patient.id = :patientId")
     List<Appointment> filterByDoctorNameAndPatientId(@Param("doctorName") String doctorName,
                                                      @Param("patientId") Long patientId);
+
+    // Filter by doctor name, patientId, and status
     @Query("SELECT a FROM Appointment a " +
             "JOIN a.doctor d " +
             "WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :doctorName, '%')) AND a.patient.id = :patientId AND a.status = :status")
@@ -48,13 +59,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
                                                               @Param("patientId") Long patientId,
                                                               @Param("status") int status);
 
+    // Update appointment status
     @Modifying
     @Transactional
     @Query("UPDATE Appointment a SET a.status = :status WHERE a.id = :id")
     void updateStatus(@Param("status") int status, @Param("id") long id);
-
 }
-   // 1. Extend JpaRepository:
+
+// 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Appointment, Long>, which gives it basic CRUD functionality.
 //    - The methods such as save, delete, update, and find are inherited without the need for explicit implementation.
 //    - JpaRepository also includes pagination and sorting features.

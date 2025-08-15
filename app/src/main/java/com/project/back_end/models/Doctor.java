@@ -37,8 +37,9 @@ public class Doctor {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phone;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     private List<String> availableTimes;
+
 
     public Doctor() {
     }
