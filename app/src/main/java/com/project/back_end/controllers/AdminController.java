@@ -8,6 +8,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Map;
 
 @Controller
 @RequestMapping("${api.path}admin")
@@ -22,12 +25,14 @@ public class AdminController {
     // GET /{api.path}admin -> redirect to login page
     @GetMapping
     public String root() {
-        return "redirect:admin/login";
+        // Use a relative redirect so it stays under the class-level path
+        return "redirect:login";
     }
 
     // GET /{api.path}admin/login -> render login page
     @GetMapping("/login")
     public String adminLoginPage() {
+        // Render the login template instead of the dashboard
         return "admin/adminLogin";
     }
 
@@ -41,12 +46,18 @@ public class AdminController {
             return "admin/adminLogin";
         }
 
-        boolean valid = appService.validateAdminLogin(admin);
-        if (valid) {
-            // Relative redirect keeps controller-level base path
+        ResponseEntity<Map<String, String>> response = appService.validateAdmin(admin);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            // Optional: you can extract the token if needed
+            // String token = response.getBody() != null ? response.getBody().get("token") : null;
             return "redirect:dashboard";
         } else {
-            model.addAttribute("error", "Invalid username or password");
+            String error = "Invalid username or password";
+            if (response.getBody() != null && response.getBody().get("error") != null) {
+                error = response.getBody().get("error");
+            }
+            model.addAttribute("error", error);
             return "admin/adminLogin";
         }
     }

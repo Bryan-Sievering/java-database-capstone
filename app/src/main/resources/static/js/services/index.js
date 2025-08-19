@@ -1,21 +1,31 @@
+// JavaScript
 import { openModal } from "../components/modals.js";
 import { API_BASE_URL } from "../config/config.js";
 
 const ADMIN_API = API_BASE_URL + '/admin';
 const DOCTOR_API = API_BASE_URL + '/doctor/login';
+const PATIENT_API = API_BASE_URL + '/patient/login';
 
+// Attach modal openers after DOM load
 window.onload = function () {
-  const adminBtn = document.getElementById('adminLogin');
+  const adminBtn = document.getElementById('adminButton');
   if (adminBtn) {
     adminBtn.addEventListener('click', () => {
       openModal('adminLogin');
     });
   }
 
-  const doctorBtn = document.getElementById('doctorLogin');
+  const doctorBtn = document.getElementById('doctorButton');
   if (doctorBtn) {
     doctorBtn.addEventListener('click', () => {
       openModal('doctorLogin');
+    });
+  }
+
+  const patientBtn = document.getElementById('patientButton');
+  if (patientBtn) {
+    patientBtn.addEventListener('click', () => {
+      openModal('patientLogin');
     });
   }
 };
@@ -74,15 +84,49 @@ window.doctorLoginHandler = async function () {
   }
 };
 
+// Patient Login Handler
+window.patientLoginHandler = async function () {
+  const email = document.getElementById('patientEmail')?.value.trim();
+  const password = document.getElementById('patientPassword')?.value.trim();
+
+  if (!email || !password) {
+    alert('Please enter email and password.');
+    return;
+  }
+
+  const patient = { email, password };
+
+  try {
+    const response = await fetch(PATIENT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patient),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      selectRole('patient');
+    } else {
+      alert('Invalid credentials!');
+    }
+  } catch (error) {
+    console.error('Patient login error:', error);
+    alert('An error occurred during login. Please try again.');
+  }
+};
+
 // Helper function to set the user role in localStorage and trigger page rendering
 export function selectRole(role) {
-    localStorage.setItem('userRole', role);
+  localStorage.setItem('userRole', role);
 
-    if (role === 'admin') {
-        window.location.href = '/admin'; // calls AdminController@GetMapping
-    } else if (role === 'doctor') {
-        window.location.href = '/doctor'; // calls DoctorController@GetMapping
-    }
+  if (role === 'admin') {
+    window.location.href = '/admin';
+  } else if (role === 'doctor') {
+    window.location.href = '/doctor';
+  } else if (role === 'patient') {
+    window.location.href = '/patient';
+  }
 }
 
 

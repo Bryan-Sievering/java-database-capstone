@@ -49,7 +49,24 @@ public class PatientService {
      * Check if a patient exists by email or phone
      */
     public boolean patientExists(String email, String phone) {
-        return patientRepository.findByEmailOrPhone(email, phone).isPresent();
+        boolean emailTaken = false;
+        boolean phoneTaken = false;
+
+        if (email != null && !email.isBlank()) {
+            try {
+                emailTaken = patientRepository.existsByEmail(email);
+            } catch (Exception ignored) {
+                emailTaken = patientRepository.findByEmail(email).isPresent();
+            }
+        }
+        if (phone != null && !phone.isBlank()) {
+            try {
+                phoneTaken = patientRepository.existsByPhone(phone);
+            } catch (Exception ignored) {
+                phoneTaken = patientRepository.findByEmailOrPhone("", phone).isPresent();
+            }
+        }
+        return emailTaken || phoneTaken;
     }
 
     /**
@@ -134,18 +151,31 @@ public class PatientService {
     /**
      * Validate patient login credentials and return a token if successful
      */
-    public String validatePatientLogin(Login login) {
-        Optional<Patient> optionalPatient = patientRepository.findByEmail(login.getEmail());
-        if (optionalPatient.isPresent()) {
-            Patient patient = optionalPatient.get();
-            // Compare the password
-            if (patient.getPassword().equals(login.getPassword())) {
-                // Generate a token with the patient ID as identifier
-                return tokenService.generateToken(patient.getId().toString());
+    public ResponseEntity<Map<String, String>> validatePatientLogin(Login login) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            Optional<Patient> patientOpt = patientRepository.findByEmail(login.getEmail());
+            if (patientOpt.isPresent()) {
+                Patient patient = patientOpt.get();
+                if (patient.getPassword().equals(login.getPassword())) {
+                    // Use patient ID as the JWT subject so TokenService can parse/validate it
+                    String token = tokenService.generateToken(patient.getId().toString());
+                    response.put("token", token);
+                    return ResponseEntity.ok(response);
+                } else {
+                    response.put("message", "Incorrect password");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+                }
+            } else {
+                response.put("message", "Patient not found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
+        } catch (Exception e) {
+            response.put("message", "Patient login error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-        return null; // invalid credentials
     }
+
 
     public List<AppointmentDTO> filterByDoctor(String doctorName, Long patientId, String token) {
         // You can reuse existing filtering logic

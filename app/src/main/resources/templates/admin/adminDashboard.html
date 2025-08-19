@@ -1,4 +1,3 @@
-<!-- adminDashboard.html -->
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
@@ -63,8 +62,14 @@
 
         </div>
 
-        <script type="module" src="../js/services/adminDashboard.js" defer></script>
-        <script type="module" src="../js/components/doctorCard.js" defer></script>
+        <!-- HTML -->
+        <!-- Add a button the JS expects (optional if you guard in JS) -->
+        <button id="addDocBtn" class="dashboard-btn" type="button">Add Doctor</button>
+
+        <!-- Prefer Thymeleaf or absolute URLs for scripts; avoid relative ../ when possible -->
+        <!-- If rendered by Thymeleaf: -->
+        <script type="module" th:src="@{/js/services/adminDashboard.js}" defer></script>
+        <!-- Remove the extra doctorCard.js script if it’s imported inside adminDashboard.js -->
 
     </body>
 
@@ -175,4 +180,3 @@ with search, filter, and modal functionality.
     * Finish the structure by properly closing all tags.
 
  -->
-
